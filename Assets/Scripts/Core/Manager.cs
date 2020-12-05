@@ -1,78 +1,80 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class Manager : MonoBehaviour {
+public class Manager : MonoBehaviour
+{
+    private static Manager instance;
 
-	public event System.Action<Chip> customChipCreated;
+    public static ChipEditor ActiveChipEditor => instance.activeChipEditor;
 
-	public ChipEditor chipEditorPrefab;
-	public ChipPackage chipPackagePrefab;
-	public Wire wirePrefab;
-	public Chip[] builtinChips;
+    public event System.Action<Chip> customChipCreated;
 
-	ChipEditor activeChipEditor;
-	int currentChipCreationIndex;
-	static Manager instance;
+    public ChipEditor chipEditorPrefab;
+    public ChipPackage chipPackagePrefab;
+    public Wire wirePrefab;
+    public Chip[] builtinChips;
 
-	void Awake () {
-		instance = this;
-		activeChipEditor = FindObjectOfType<ChipEditor> ();
-		FindObjectOfType<CreateMenu> ().onChipCreatePressed += SaveAndPackageChip;
-	}
+    private ChipEditor activeChipEditor;
+    private int currentChipCreationIndex;
 
-	void Start () {
-		SaveSystem.Init ();
-		SaveSystem.LoadAll (this);
-	}
+    private void Awake()
+    {
+        instance = this;
+        activeChipEditor = FindObjectOfType<ChipEditor>();
+        FindObjectOfType<CreateMenu>().onChipCreatePressed += SaveAndPackageChip;
+    }
 
-	public static ChipEditor ActiveChipEditor {
-		get {
-			return instance.activeChipEditor;
-		}
-	}
+    private void Start()
+    {
+        SaveSystem.Init();
+        SaveSystem.LoadAll(this);
+    }
 
-	public Chip LoadChip (ChipSaveData loadedChipData) {
-		activeChipEditor.LoadFromSaveData (loadedChipData);
-		currentChipCreationIndex = activeChipEditor.creationIndex;
+    public Chip LoadChip(ChipSaveData loadedChipData)
+    {
+        activeChipEditor.LoadFromSaveData(loadedChipData);
+        currentChipCreationIndex = activeChipEditor.creationIndex;
 
-		Chip loadedChip = PackageChip ();
-		LoadNewEditor ();
-		return loadedChip;
-	}
+        Chip loadedChip = PackageChip();
+        LoadNewEditor();
+        return loadedChip;
+    }
 
-	void SaveAndPackageChip () {
+    private void SaveAndPackageChip()
+    {
+        ChipSaver.Save(activeChipEditor);
+        PackageChip();
+        LoadNewEditor();
+    }
 
-		ChipSaver.Save (activeChipEditor);
-		PackageChip ();
-		LoadNewEditor ();
-	}
+    private Chip PackageChip()
+    {
+        ChipPackage package = Instantiate(chipPackagePrefab, parent: transform);
+        package.PackageCustomChip(activeChipEditor);
+        package.gameObject.SetActive(false);
 
-	Chip PackageChip () {
-		ChipPackage package = Instantiate (chipPackagePrefab, parent : transform);
-		package.PackageCustomChip (activeChipEditor);
-		package.gameObject.SetActive (false);
+        Chip customChip = package.GetComponent<Chip>();
+        customChipCreated?.Invoke(customChip);
+        currentChipCreationIndex++;
+        return customChip;
+    }
 
-		Chip customChip = package.GetComponent<Chip> ();
-		customChipCreated?.Invoke (customChip);
-		currentChipCreationIndex++;
-		return customChip;
-	}
+    private void LoadNewEditor()
+    {
+        if (activeChipEditor)
+        {
+            Destroy(activeChipEditor.gameObject);
+        }
+        activeChipEditor = Instantiate(chipEditorPrefab, Vector3.zero, Quaternion.identity);
+        activeChipEditor.creationIndex = currentChipCreationIndex;
+    }
 
-	void LoadNewEditor () {
-		if (activeChipEditor) {
-			Destroy (activeChipEditor.gameObject);
-		}
-		activeChipEditor = Instantiate (chipEditorPrefab, Vector3.zero, Quaternion.identity);
-		activeChipEditor.creationIndex = currentChipCreationIndex;
-	}
+    public void SpawnChip(Chip chip)
+    {
+        activeChipEditor.chipInteraction.SpawnChip(chip);
+    }
 
-	public void SpawnChip (Chip chip) {
-		activeChipEditor.chipInteraction.SpawnChip (chip);
-	}
-
-	public void LoadMainMenu () {
-		UnityEngine.SceneManagement.SceneManager.LoadScene (0);
-	}
-
+    public void LoadMainMenu()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+    }
 }

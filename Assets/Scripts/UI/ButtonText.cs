@@ -1,48 +1,55 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ButtonText : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler {
+public class ButtonText : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    public Button button;
+    public TMPro.TMP_Text buttonText;
+    public Color normalCol = Color.white;
+    public Color nonInteractableCol = Color.grey;
+    public Color highlightedCol = Color.white;
 
-	public Button button;
-	public TMPro.TMP_Text buttonText;
-	public Color normalCol = Color.white;
-	public Color nonInteractableCol = Color.grey;
-	public Color highlightedCol = Color.white;
-	bool highlighted;
+    private bool highlighted;
 
-	void Start () {
+    private void Start()
+    {
+    }
 
-	}
+    private void Update()
+    {
+        Color col = (highlighted) ? highlightedCol : normalCol;
+        buttonText.color = (button.interactable) ? col : nonInteractableCol;
+    }
 
-	void Update () {
-		Color col = (highlighted) ? highlightedCol : normalCol;
-		buttonText.color = (button.interactable) ? col : nonInteractableCol;
-	}
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (button.interactable)
+        {
+            highlighted = true;
+        }
+    }
 
-	public void OnPointerEnter (PointerEventData eventData) {
-		if (button.interactable) {
-			highlighted = true;
-		}
-	}
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        highlighted = false;
+    }
 
-	public void OnPointerExit (PointerEventData eventData) {
-		highlighted = false;
-	}
+    private void OnEnable()
+    {
+        highlighted = false;
+    }
 
-	void OnEnable () {
-		highlighted = false;
-	}
+    private void OnValidate()
+    {
+        if (button == null)
+        {
+            button = GetComponent<Button>();
+        }
 
-	void OnValidate () {
-		if (button == null) {
-			button = GetComponent<Button> ();
-		}
-		if (buttonText == null) {
-			buttonText = transform.GetComponentInChildren<TMPro.TMP_Text> ();
-		}
-	}
-
+        if (buttonText == null)
+        {
+            buttonText = transform.GetComponentInChildren<TMPro.TMP_Text>();
+        }
+    }
 }
